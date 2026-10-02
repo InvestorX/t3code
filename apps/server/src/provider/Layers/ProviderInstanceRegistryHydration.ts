@@ -16,9 +16,10 @@
  * mutable registry. For every built-in driver whose id is not already
  * present in `providerInstances` (keyed on
  * `defaultInstanceIdForDriver(driverKind)` — literally the driver kind as a
- * routing slug), we synthesize an envelope from the legacy field. The
- * registry decodes both flavours through the same `configSchema` and ends
- * up with one uniform `ProviderInstance` per entry.
+ * routing slug), we synthesize an envelope from the legacy field. Drivers
+ * without a legacy mirror are synthesized from `defaultConfig()` as disabled
+ * instances so new instance-native drivers can appear without expanding the
+ * historical closed `settings.providers` object.
  *
  * Explicit `providerInstances` entries always win — users can already
  * override the legacy `providers.<kind>` blob by authoring a
@@ -64,7 +65,10 @@ import { ProviderInstanceRegistryMutableLayer } from "./ProviderInstanceRegistry
  *   1. Copy all explicit `settings.providerInstances` entries verbatim.
  *   2. For each built-in driver whose `defaultInstanceIdForDriver(id)` key
  *      is *not* already in the explicit map, synthesize an entry from the
- *      matching legacy `settings.providers.<kind>` blob.
+ *      matching legacy `settings.providers.<kind>` blob when it exists.
+ *   3. If a new driver has no legacy mirror, publish its typed default config
+ *      as a disabled instance. An explicit `providerInstances` entry can then
+ *      enable/configure it without adding another legacy settings field.
  *
  * The returned map is the input the registry consumes; pure & exported
  * separately so the hydration logic can be exercised by unit tests
@@ -83,14 +87,16 @@ export const deriveProviderInstanceConfigMap = (
       continue;
     }
 
-    // Only built-in drivers have a legacy mirror; the registry's
-    // `providers` struct is keyed on the same literal slug as
-    // `driverKind`. Access is dynamic (the driver kind is a branded string),
-    // but it's constrained to `keyof settings.providers` by the union of
-    // built-in driver kinds.
+    // Legacy settings are a closed compatibility surface. Instance-native
+    // drivers (such as Hermes) intentionally have no entry there.
     const legacyKey = driver.driverKind as keyof ServerSettings["providers"];
     const legacyConfig = settings.providers[legacyKey];
     if (legacyConfig === undefined) {
+      merged[instanceId] = {
+        driver: driver.driverKind,
+        enabled: false,
+        config: driver.defaultConfig(),
+      };
       continue;
     }
 
