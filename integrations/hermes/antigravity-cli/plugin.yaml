@@ -1,0 +1,4 @@
+name: antigravity-cli
+kind: model-provider
+version: 0.2.0
+description: Official Google Antigravity agy CLI subprocess provider for Hermes Agent
