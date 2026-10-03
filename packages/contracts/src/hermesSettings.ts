@@ -12,8 +12,17 @@ import * as Schema from "effect/Schema";
  * defaults during decode.
  */
 export const HermesSettings = Schema.Struct({
-  enabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
-  binaryPath: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed("hermes"))),
+  enabled: Schema.Boolean.pipe(
+    Schema.withDecodingDefault(Effect.succeed(true)),
+    Schema.annotateKey({ providerSettingsForm: { hidden: true } }),
+  ),
+  binaryPath: Schema.String.pipe(
+    Schema.withDecodingDefault(Effect.succeed("hermes")),
+    Schema.annotateKey({
+      title: "Hermes binary",
+      description: "Executable used to launch `hermes acp`. Leave as `hermes` when it is on PATH.",
+    }),
+  ),
 });
 
 export type HermesSettings = typeof HermesSettings.Type;
