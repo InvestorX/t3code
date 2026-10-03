@@ -7,6 +7,7 @@ import {
   ProviderDriverKind,
   ThreadId,
   defaultInstanceIdForDriver,
+  type ProviderRuntimeEvent,
 } from "@t3tools/contracts";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
@@ -86,7 +87,7 @@ const make = Effect.gen(function* () {
               : Effect.void,
           );
 
-          const collectEvent = (event: Parameters<Parameters<typeof Stream.runForEach>[1]>[0]) => {
+          const collectEvent = (event: ProviderRuntimeEvent) => {
             if (event.threadId !== syntheticThreadId) return Effect.void;
             if (event.type === "content.delta" && event.payload.streamKind === "assistant_text") {
               return Ref.update(response, (current) => appendBounded(current, event.payload.delta));
@@ -114,7 +115,7 @@ const make = Effect.gen(function* () {
             Stream.runForEach(collectEvent),
             Effect.forkScoped,
           );
-          yield* Effect.yieldNow();
+          yield* Effect.yieldNow;
 
           const delegated = Effect.gen(function* () {
             yield* target.adapter
