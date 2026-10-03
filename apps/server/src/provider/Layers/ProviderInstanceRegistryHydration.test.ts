@@ -17,7 +17,7 @@ describe("deriveProviderInstanceConfigMap", () => {
       driver: ProviderDriverKind.make("hermes"),
       enabled: false,
       config: {
-        enabled: false,
+        enabled: true,
         binaryPath: "hermes",
       },
     });
