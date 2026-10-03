@@ -22,12 +22,38 @@ export interface HermesAntigravityPluginInstallResult {
   readonly pluginDirectory: string;
 }
 
+export type HermesAntigravityPluginInstallAction =
+  | "write"
+  | "current"
+  | "skip-user-managed";
+
 export function resolveHermesHome(
   path: Path.Path["Service"],
   environment: NodeJS.ProcessEnv,
 ): string {
   const configured = environment.HERMES_HOME?.trim();
   return configured ? path.resolve(configured) : path.join(homedir(), ".hermes");
+}
+
+export function resolveHermesAntigravityPluginInstallAction(input: {
+  readonly pythonExists: boolean;
+  readonly manifestExists: boolean;
+  readonly markerExists: boolean;
+  readonly existingMarker: string;
+  readonly desiredMarker: string;
+}): HermesAntigravityPluginInstallAction {
+  if ((input.pythonExists || input.manifestExists) && !input.markerExists) {
+    return "skip-user-managed";
+  }
+  if (
+    input.pythonExists &&
+    input.manifestExists &&
+    input.markerExists &&
+    input.existingMarker === input.desiredMarker
+  ) {
+    return "current";
+  }
+  return "write";
 }
 
 /**
@@ -60,16 +86,6 @@ export const ensureHermesAntigravityPlugin = Effect.fn(
     fs.exists(markerPath),
   ]);
 
-  // Respect an existing out-of-tree plugin. The marker is the ownership
-  // boundary; merely sharing the same provider id never grants T3 permission
-  // to overwrite user code.
-  if ((pythonExists || manifestExists) && !markerExists) {
-    return {
-      status: "skipped-user-managed",
-      pluginDirectory,
-    } satisfies HermesAntigravityPluginInstallResult;
-  }
-
   const digest = createHash("sha256")
     .update(bundle.python, "utf8")
     .update("\0", "utf8")
@@ -85,17 +101,28 @@ export const ensureHermesAntigravityPlugin = Effect.fn(
     null,
     2,
   )}\n`;
+  const existingMarker = markerExists
+    ? yield* fs.readFileString(markerPath).pipe(Effect.orElseSucceed(() => ""))
+    : "";
 
-  if (pythonExists && manifestExists && markerExists) {
-    const existingMarker = yield* fs
-      .readFileString(markerPath)
-      .pipe(Effect.orElseSucceed(() => ""));
-    if (existingMarker === markerContents) {
-      return {
-        status: "current",
-        pluginDirectory,
-      } satisfies HermesAntigravityPluginInstallResult;
-    }
+  const action = resolveHermesAntigravityPluginInstallAction({
+    pythonExists,
+    manifestExists,
+    markerExists,
+    existingMarker,
+    desiredMarker: markerContents,
+  });
+  if (action === "skip-user-managed") {
+    return {
+      status: "skipped-user-managed",
+      pluginDirectory,
+    } satisfies HermesAntigravityPluginInstallResult;
+  }
+  if (action === "current") {
+    return {
+      status: "current",
+      pluginDirectory,
+    } satisfies HermesAntigravityPluginInstallResult;
   }
 
   yield* fs.makeDirectory(pluginDirectory, { recursive: true });
