@@ -27,8 +27,13 @@ export type HermesAntigravityPluginInstallAction =
   | "current"
   | "skip-user-managed";
 
+interface HermesPathOps {
+  readonly resolve: (...segments: ReadonlyArray<string>) => string;
+  readonly join: (...segments: ReadonlyArray<string>) => string;
+}
+
 export function resolveHermesHome(
-  path: Path.Path["Service"],
+  path: HermesPathOps,
   environment: NodeJS.ProcessEnv,
 ): string {
   const configured = environment.HERMES_HOME?.trim();
