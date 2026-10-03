@@ -1,4 +1,4 @@
-import type { RuntimeMode } from "@t3tools/contracts";
+import { HERMES_DEFAULT_MODEL, type RuntimeMode } from "@t3tools/contracts";
 import * as Crypto from "effect/Crypto";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -9,7 +9,7 @@ import type * as EffectAcpErrors from "effect-acp/errors";
 import type { HermesSettings } from "../HermesSettings.ts";
 import * as AcpSessionRuntime from "./AcpSessionRuntime.ts";
 
-export const HERMES_DEFAULT_MODEL = "hermes-default";
+export { HERMES_DEFAULT_MODEL };
 
 export interface HermesAcpRuntimeInput extends Omit<
   AcpSessionRuntime.AcpSessionRuntimeOptions,
