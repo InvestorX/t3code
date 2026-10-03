@@ -36,16 +36,6 @@ const DRIVER = ProviderDriverKind.make("hermes");
 const PROBE_TIMEOUT = "8 seconds";
 const EMPTY_CAPABILITIES = createModelCapabilities({ optionDescriptors: [] });
 
-export const HERMES_ANTIGRAVITY_FALLBACK_MODEL_IDS = [
-  "gemini-3-flash-agent",
-  "gemini-3.5-flash-low",
-  "gemini-pro-agent",
-  "gemini-3.1-pro-low",
-  "claude-sonnet-4-6",
-  "claude-opus-4-6-thinking",
-  "gpt-oss-120b-medium",
-] as const;
-
 const DEFAULT_MODEL: ServerProviderModel = {
   slug: HERMES_DEFAULT_MODEL,
   name: "Hermes Default",
@@ -54,18 +44,7 @@ const DEFAULT_MODEL: ServerProviderModel = {
   capabilities: EMPTY_CAPABILITIES,
 };
 
-const ANTIGRAVITY_FALLBACK_MODELS: ReadonlyArray<ServerProviderModel> =
-  HERMES_ANTIGRAVITY_FALLBACK_MODEL_IDS.map((modelId) => ({
-    slug: `google-antigravity:${modelId}`,
-    name: `Google Antigravity · ${modelId}`,
-    isCustom: false,
-    capabilities: EMPTY_CAPABILITIES,
-  }));
-
-const DEFAULT_MODELS: ReadonlyArray<ServerProviderModel> = [
-  DEFAULT_MODEL,
-  ...ANTIGRAVITY_FALLBACK_MODELS,
-];
+const DEFAULT_MODELS: ReadonlyArray<ServerProviderModel> = [DEFAULT_MODEL];
 
 const PRESENTATION = {
   displayName: "Hermes",
@@ -86,7 +65,12 @@ function normalizeModelName(modelId: string, advertisedName: string): string {
   return `${provider} · ${name}`;
 }
 
-/** Convert the authoritative model state from a real Hermes ACP session into T3 picker rows. */
+/**
+ * Convert the authoritative model state from a real Hermes ACP session into
+ * T3 picker rows. We deliberately do not invent provider-qualified models:
+ * Hermes gates OAuth plugin rows on live credentials, so trusting its ACP
+ * inventory keeps unauthenticated Antigravity models out of the picker.
+ */
 export function buildHermesModelsFromSessionStart(
   started: AcpSessionRuntimeStartResult,
 ): ReadonlyArray<ServerProviderModel> {
@@ -107,15 +91,6 @@ export function buildHermesModelsFromSessionStart(
       isCustom: false,
       capabilities: EMPTY_CAPABILITIES,
     });
-  }
-
-  // Keep the bundled Antigravity fallback rows if the live Hermes inventory is
-  // temporarily sparse. Matching slugs are de-duplicated in favour of Hermes'
-  // advertised names.
-  for (const fallback of ANTIGRAVITY_FALLBACK_MODELS) {
-    if (seen.has(fallback.slug)) continue;
-    seen.add(fallback.slug);
-    discovered.push(fallback);
   }
 
   return [DEFAULT_MODEL, ...discovered];
@@ -290,8 +265,8 @@ export function makeHermesProvider(input: {
         const nextModels = buildHermesModelsFromSessionStart(started);
         const changed = yield* Ref.modify(discoveredModelsRef, (previous) =>
           Equal.equals(previous, nextModels)
-            ? [false, previous] as const
-            : [true, nextModels] as const,
+            ? ([false, previous] as const)
+            : ([true, nextModels] as const),
         );
         if (changed) yield* PubSub.publish(modelChanges, undefined);
       });
