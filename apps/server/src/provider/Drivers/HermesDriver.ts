@@ -66,10 +66,10 @@ export const HermesDriver: ProviderDriver<HermesSettings, HermesDriverEnv> = {
           Effect.tap((result) =>
             result.status === "skipped-user-managed"
               ? Effect.logInfo(
-                  "Hermes google-antigravity plugin is user-managed; leaving it unchanged.",
+                  "Hermes antigravity-cli plugin is user-managed; leaving it unchanged.",
                   { pluginDirectory: result.pluginDirectory },
                 )
-              : Effect.logDebug("Hermes google-antigravity plugin prepared.", {
+              : Effect.logDebug("Hermes antigravity-cli plugin prepared.", {
                   status: result.status,
                   pluginDirectory: result.pluginDirectory,
                 }),
@@ -77,7 +77,7 @@ export const HermesDriver: ProviderDriver<HermesSettings, HermesDriverEnv> = {
           // Hermes itself remains usable even when its optional bundled model
           // provider cannot be materialized (read-only home, policy, etc.).
           Effect.catchCause((cause) =>
-            Effect.logWarning("Failed to prepare bundled Hermes google-antigravity plugin.", {
+            Effect.logWarning("Failed to prepare bundled Hermes antigravity-cli plugin.", {
               cause,
             }),
           ),
