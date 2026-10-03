@@ -17,11 +17,13 @@ import {
 import * as Cause from "effect/Cause";
 import * as Crypto from "effect/Crypto";
 import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 
 import * as OrchestrationEngine from "../../../orchestration/Services/OrchestrationEngine.ts";
 import * as ProjectionSnapshotQuery from "../../../orchestration/Services/ProjectionSnapshotQuery.ts";
 import * as McpInvocationContext from "../../McpInvocationContext.ts";
+import { AntigravityDelegateToolkitHandlersLive } from "../antigravityDelegate/handlers.ts";
 import {
   type ListThreadPullRequestsResult,
   PullRequestLinkFailedError,
@@ -32,7 +34,7 @@ import {
   PullRequestListFailedError,
   type PullRequestTargetInput,
   PullRequestThreadNotFoundError,
-  PullRequestsToolkit,
+  PullRequestsCoreToolkit,
   type ThreadPullRequestEntry,
 } from "./tools.ts";
 
@@ -188,7 +190,7 @@ const make = Effect.gen(function* () {
         ? Effect.failCause(cause as Cause.Cause<never>)
         : Effect.fail(new Failure({ cause }));
 
-  return PullRequestsToolkit.of({
+  return PullRequestsCoreToolkit.of({
     link_pull_request: (input) =>
       Effect.gen(function* () {
         const thread = yield* requireThread(PullRequestLinkFailedError);
@@ -245,4 +247,10 @@ const make = Effect.gen(function* () {
   });
 });
 
-export const PullRequestsToolkitHandlersLive = PullRequestsToolkit.toLayer(make);
+const PullRequestsCoreToolkitHandlersLive = PullRequestsCoreToolkit.toLayer(make);
+
+/** Handler contexts for the merged toolkit exported from tools.ts. */
+export const PullRequestsToolkitHandlersLive = Layer.merge(
+  PullRequestsCoreToolkitHandlersLive,
+  AntigravityDelegateToolkitHandlersLive,
+);
