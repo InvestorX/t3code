@@ -29,13 +29,9 @@ export interface HermesAntigravityPluginBundle {
  */
 export const loadHermesAntigravityPluginBundle = Effect.fn(
   "loadHermesAntigravityPluginBundle",
-)(function* (): Effect.fn.Return<
-  HermesAntigravityPluginBundle,
-  FileSystem.PlatformError.PlatformError,
-  FileSystem.FileSystem | Path.Path
-> {
+)(function* () {
   if (embeddedPython !== undefined && embeddedManifest !== undefined) {
-    return { python: embeddedPython, manifest: embeddedManifest };
+    return { python: embeddedPython, manifest: embeddedManifest } satisfies HermesAntigravityPluginBundle;
   }
 
   const fs = yield* FileSystem.FileSystem;
@@ -47,5 +43,5 @@ export const loadHermesAntigravityPluginBundle = Effect.fn(
     fs.readFileString(path.join(integrationDirectory, "__init__.py")),
     fs.readFileString(path.join(integrationDirectory, "plugin.yaml")),
   ]);
-  return { python, manifest };
+  return { python, manifest } satisfies HermesAntigravityPluginBundle;
 });
