@@ -12,6 +12,7 @@ import * as Toolkit from "effect/unstable/ai/Toolkit";
 import * as McpInvocationContext from "../../McpInvocationContext.ts";
 import * as OrchestrationEngine from "../../../orchestration/Services/OrchestrationEngine.ts";
 import * as ProjectionSnapshotQuery from "../../../orchestration/Services/ProjectionSnapshotQuery.ts";
+import { AntigravityDelegateToolkit } from "../antigravityDelegate/tools.ts";
 
 const dependencies = [
   McpInvocationContext.McpInvocationContext,
@@ -224,8 +225,19 @@ const ListThreadPullRequestsTool = Tool.make("list_thread_pull_requests", {
   .annotate(Tool.Idempotent, true)
   .annotate(Tool.OpenWorld, false);
 
-export const PullRequestsToolkit = Toolkit.make(
+export const PullRequestsCoreToolkit = Toolkit.make(
   LinkPullRequestTool,
   UnlinkPullRequestTool,
   ListThreadPullRequestsTool,
+);
+
+/**
+ * McpHttpServer already registers this toolkit as one unit. Keep the PR tools
+ * as a focused core toolkit, then merge the Hermes-only delegate tool into the
+ * same registration bundle so no central MCP transport code needs special
+ * provider knowledge.
+ */
+export const PullRequestsToolkit = Toolkit.merge(
+  PullRequestsCoreToolkit,
+  AntigravityDelegateToolkit,
 );
