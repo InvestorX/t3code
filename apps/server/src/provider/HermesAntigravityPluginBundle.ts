@@ -22,10 +22,11 @@ export interface HermesAntigravityPluginBundle {
 }
 
 /**
- * Return the plugin sources embedded by the production build. Source-mode
- * development falls back to the canonical files under repo-level
- * `integrations/hermes/google-antigravity/` so there is only one Python source
- * of truth.
+ * Return the safe external-process plugin sources embedded by the production
+ * build. Source-mode development falls back to the canonical repo-level
+ * `integrations/hermes/antigravity-cli/` files so there is one Python source
+ * of truth. The historical direct Code Assist OAuth implementation is not
+ * bundled here.
  */
 export const loadHermesAntigravityPluginBundle = Effect.fn(
   "loadHermesAntigravityPluginBundle",
@@ -37,7 +38,7 @@ export const loadHermesAntigravityPluginBundle = Effect.fn(
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const integrationDirectory = path.fromFileUrl(
-    new URL("../../../../integrations/hermes/google-antigravity/", import.meta.url),
+    new URL("../../../../integrations/hermes/antigravity-cli/", import.meta.url),
   );
   const [python, manifest] = yield* Effect.all([
     fs.readFileString(path.join(integrationDirectory, "__init__.py")),
