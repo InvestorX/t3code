@@ -1,0 +1,4 @@
+name: google-antigravity
+kind: model-provider
+version: 0.1.0
+description: Google Antigravity OAuth / Code Assist model provider for Hermes Agent
