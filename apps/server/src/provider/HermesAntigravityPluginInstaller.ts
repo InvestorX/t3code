@@ -8,7 +8,8 @@ import * as Path from "effect/Path";
 import { writeFileStringAtomically } from "../atomicWrite.ts";
 import { loadHermesAntigravityPluginBundle } from "./HermesAntigravityPluginBundle.ts";
 
-const PLUGIN_ID = "google-antigravity";
+const PLUGIN_ID = "antigravity-cli";
+const LEGACY_PLUGIN_ID = "google-antigravity";
 const MANAGED_MARKER = ".t3code-managed.json";
 
 export type HermesAntigravityPluginInstallStatus =
@@ -61,11 +62,39 @@ export function resolveHermesAntigravityPluginInstallAction(input: {
   return "write";
 }
 
+function isLegacyT3ManagedMarker(contents: string): boolean {
+  try {
+    const parsed = JSON.parse(contents) as { managedBy?: unknown; plugin?: unknown };
+    return parsed.managedBy === "t3code" && parsed.plugin === LEGACY_PLUGIN_ID;
+  } catch {
+    return false;
+  }
+}
+
+/** Remove only T3's historical direct-OAuth plugin; never touch user-owned files. */
+const removeLegacyManagedPlugin = Effect.fn("removeLegacyManagedHermesAntigravityPlugin")(
+  function* (hermesHome: string) {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const legacyDirectory = path.join(
+      hermesHome,
+      "plugins",
+      "model-providers",
+      LEGACY_PLUGIN_ID,
+    );
+    const markerPath = path.join(legacyDirectory, MANAGED_MARKER);
+    if (!(yield* fs.exists(markerPath))) return;
+    const marker = yield* fs.readFileString(markerPath).pipe(Effect.orElseSucceed(() => ""));
+    if (!isLegacyT3ManagedMarker(marker)) return;
+    yield* fs.remove(legacyDirectory, { recursive: true, force: true });
+  },
+);
+
 /**
- * Materialize T3's bundled Hermes model-provider plugin into the active
- * HERMES_HOME. A pre-existing plugin without T3's marker is user-owned and is
- * never overwritten. Once T3 creates the marker, later T3 builds may update
- * the managed files when their content hash changes.
+ * Materialize T3's bundled Hermes external-process provider into the active
+ * HERMES_HOME. The plugin launches the official `agy` CLI and never handles
+ * Google OAuth tokens itself. A pre-existing target directory without T3's
+ * marker is user-owned and is never overwritten.
  */
 export const ensureHermesAntigravityPlugin = Effect.fn(
   "ensureHermesAntigravityPlugin",
@@ -75,6 +104,8 @@ export const ensureHermesAntigravityPlugin = Effect.fn(
   const bundle = yield* loadHermesAntigravityPluginBundle();
 
   const hermesHome = resolveHermesHome(path, environment);
+  yield* removeLegacyManagedPlugin(hermesHome);
+
   const pluginDirectory = path.join(
     hermesHome,
     "plugins",
@@ -98,9 +129,10 @@ export const ensureHermesAntigravityPlugin = Effect.fn(
     .digest("hex");
   const markerContents = `${JSON.stringify(
     {
-      schemaVersion: 1,
+      schemaVersion: 2,
       managedBy: "t3code",
       plugin: PLUGIN_ID,
+      transport: "official-agy-subprocess",
       sha256: digest,
     },
     null,
