@@ -25,7 +25,7 @@ export { shouldBundleCliDependency };
 
 const repoEnv = loadRepoEnv();
 const hermesAntigravityPluginDirectory = new URL(
-  "../../integrations/hermes/google-antigravity/",
+  "../../integrations/hermes/antigravity-cli/",
   import.meta.url,
 );
 const hermesAntigravityPluginPython = readFileSync(
