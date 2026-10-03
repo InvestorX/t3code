@@ -84,7 +84,7 @@ export const HermesDriver: ProviderDriver<HermesSettings, HermesDriverEnv> = {
         );
       }
 
-      const snapshot = yield* makeHermesProvider({
+      const providerController = yield* makeHermesProvider({
         settings,
         environment: processEnv,
         childProcessSpawner: spawner,
@@ -106,6 +106,7 @@ export const HermesDriver: ProviderDriver<HermesSettings, HermesDriverEnv> = {
         instanceId,
         settings,
         environment: processEnv,
+        onSessionStarted: (started) => providerController.observeSessionStarted(started),
       });
       const textGeneration = yield* makeHermesTextGeneration(settings, processEnv);
 
@@ -116,7 +117,7 @@ export const HermesDriver: ProviderDriver<HermesSettings, HermesDriverEnv> = {
         displayName,
         accentColor,
         enabled,
-        snapshot,
+        snapshot: providerController.provider,
         adapter,
         textGeneration,
       } satisfies ProviderInstance;
