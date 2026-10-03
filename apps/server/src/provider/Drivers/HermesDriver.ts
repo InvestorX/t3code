@@ -11,6 +11,7 @@ import { ServerConfig } from "../../config.ts";
 import { ServerSettingsService } from "../../serverSettings.ts";
 import { makeHermesTextGeneration } from "../../textGeneration/HermesTextGeneration.ts";
 import { ProviderDriverError } from "../Errors.ts";
+import { ensureHermesAntigravityPlugin } from "../HermesAntigravityPluginInstaller.ts";
 import { HermesSettings } from "../HermesSettings.ts";
 import { makeHermesAdapter } from "../Layers/HermesAdapter.ts";
 import { makeHermesProvider } from "../Layers/HermesProvider.ts";
@@ -59,6 +60,29 @@ export const HermesDriver: ProviderDriver<HermesSettings, HermesDriverEnv> = {
         continuationGroupKey: continuationIdentity.continuationKey,
       });
       const settings = { ...config, enabled } satisfies HermesSettings;
+
+      if (settings.enabled) {
+        yield* ensureHermesAntigravityPlugin(processEnv).pipe(
+          Effect.tap((result) =>
+            result.status === "skipped-user-managed"
+              ? Effect.logInfo(
+                  "Hermes google-antigravity plugin is user-managed; leaving it unchanged.",
+                  { pluginDirectory: result.pluginDirectory },
+                )
+              : Effect.logDebug("Hermes google-antigravity plugin prepared.", {
+                  status: result.status,
+                  pluginDirectory: result.pluginDirectory,
+                }),
+          ),
+          // Hermes itself remains usable even when its optional bundled model
+          // provider cannot be materialized (read-only home, policy, etc.).
+          Effect.catchCause((cause) =>
+            Effect.logWarning("Failed to prepare bundled Hermes google-antigravity plugin.", {
+              cause,
+            }),
+          ),
+        );
+      }
 
       const snapshot = yield* makeHermesProvider({
         settings,
