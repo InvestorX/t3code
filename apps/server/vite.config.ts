@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import "vite-plus/test/config";
 import { defineConfig, mergeConfig } from "vite-plus";
 
@@ -10,7 +12,7 @@ import { WeightedShardSequencer } from "./src/testUtils/weightedShardSequencer.t
 // runtime dep external. External deps must exist on the real filesystem (the WSL
 // backend runs plain `wsl.exe -- node`, which cannot read inside an asar), so the
 // desktop build unpacked `**\/node_modules\/**` wholesale: 13,875 loose files to
-// support 20 native binaries. NSIS install time tracks file count, not bytes.
+// support 20 native binaries.
 //
 // Inverted here — bundle everything except the packages that genuinely cannot be
 // inlined. See scripts/lib/cli-external-packages.ts for what earns an exemption.
@@ -22,6 +24,18 @@ import {
 export { shouldBundleCliDependency };
 
 const repoEnv = loadRepoEnv();
+const hermesAntigravityPluginDirectory = new URL(
+  "../../integrations/hermes/antigravity-cli/",
+  import.meta.url,
+);
+const hermesAntigravityPluginPython = readFileSync(
+  new URL("__init__.py", hermesAntigravityPluginDirectory),
+  "utf8",
+);
+const hermesAntigravityPluginManifest = readFileSync(
+  new URL("plugin.yaml", hermesAntigravityPluginDirectory),
+  "utf8",
+);
 const cliBuildChannel = /^[^-+]+-(?:nightly|preview)\./.test(packageJson.version)
   ? "nightly"
   : "latest";
@@ -128,6 +142,8 @@ export default mergeConfig(
         __T3CODE_BUILD_RELAY_CLIENT_OTLP_TRACES_TOKEN__: JSON.stringify(
           repoEnv.T3CODE_RELAY_CLIENT_OTLP_TRACES_TOKEN?.trim() ?? "",
         ),
+        __T3CODE_HERMES_ANTIGRAVITY_PLUGIN_PY__: JSON.stringify(hermesAntigravityPluginPython),
+        __T3CODE_HERMES_ANTIGRAVITY_PLUGIN_YAML__: JSON.stringify(hermesAntigravityPluginManifest),
       },
     },
     test: {

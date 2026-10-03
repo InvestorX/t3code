@@ -17,11 +17,13 @@ describe("mergeProviderInstanceEnvironment", () => {
       const baseEnv = {
         CODEX_HOME: "~/.inherited-codex",
         CLAUDE_CONFIG_DIR: "~/.inherited-claude",
+        HERMES_HOME: "~/.inherited-hermes",
       };
       const environment = mergeProviderInstanceEnvironment(
         [
           { name: "CODEX_HOME", value, sensitive: false },
           { name: "CLAUDE_CONFIG_DIR", value, sensitive: false },
+          { name: "HERMES_HOME", value, sensitive: false },
           { name: "CUSTOM_VALUE", value, sensitive: false },
         ],
         baseEnv,
@@ -30,17 +32,23 @@ describe("mergeProviderInstanceEnvironment", () => {
       expect(environment).toEqual({
         CODEX_HOME: path.join(NodeOS.homedir(), tail),
         CLAUDE_CONFIG_DIR: path.join(NodeOS.homedir(), tail),
+        HERMES_HOME: path.join(NodeOS.homedir(), tail),
         CUSTOM_VALUE: value,
       });
       expect(baseEnv).toEqual({
         CODEX_HOME: "~/.inherited-codex",
         CLAUDE_CONFIG_DIR: "~/.inherited-claude",
+        HERMES_HOME: "~/.inherited-hermes",
       });
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
   it("leaves inherited provider homes unchanged", () => {
-    const baseEnv = { CODEX_HOME: "~/.codex", CLAUDE_CONFIG_DIR: "~\\.claude" };
+    const baseEnv = {
+      CODEX_HOME: "~/.codex",
+      CLAUDE_CONFIG_DIR: "~\\.claude",
+      HERMES_HOME: "~/.hermes",
+    };
 
     expect(
       mergeProviderInstanceEnvironment(
