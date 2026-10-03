@@ -26,8 +26,8 @@ describe("buildHermesModelsFromSessionStart", () => {
     const models = buildHermesModelsFromSessionStart(
       startedWithModels([
         {
-          modelId: "google-antigravity:gemini-3-flash-agent",
-          name: "Gemini 3 Flash Agent",
+          modelId: "antigravity-cli:gemini-3.8-flash-high",
+          name: "Gemini 3.8 Flash (High)",
         },
         {
           modelId: "openrouter:anthropic/claude-sonnet-4.6",
@@ -44,8 +44,8 @@ describe("buildHermesModelsFromSessionStart", () => {
     expect(models).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          slug: "google-antigravity:gemini-3-flash-agent",
-          name: "google-antigravity · Gemini 3 Flash Agent",
+          slug: "antigravity-cli:gemini-3.8-flash-high",
+          name: "antigravity-cli · Gemini 3.8 Flash (High)",
         }),
         expect.objectContaining({
           slug: "openrouter:anthropic/claude-sonnet-4.6",
@@ -65,7 +65,7 @@ describe("buildHermesModelsFromSessionStart", () => {
       ]),
     );
 
-    expect(models.some((model) => model.slug.startsWith("google-antigravity:"))).toBe(false);
+    expect(models.some((model) => model.slug.startsWith("antigravity-cli:"))).toBe(false);
     expect(models.map((model) => model.slug)).toEqual([
       "hermes-default",
       "openrouter:openai/gpt-5.4",
@@ -82,12 +82,12 @@ describe("buildHermesModelsFromSessionStart", () => {
     const models = buildHermesModelsFromSessionStart(
       startedWithModels([
         { modelId: "hermes-default", name: "Hermes Default" },
-        { modelId: "google-antigravity:claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
-        { modelId: "google-antigravity:claude-sonnet-4-6", name: "Duplicate" },
+        { modelId: "antigravity-cli:claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+        { modelId: "antigravity-cli:claude-sonnet-4-6", name: "Duplicate" },
       ]),
     );
 
     expect(models.filter((model) => model.slug === "hermes-default")).toHaveLength(1);
-    expect(models.filter((model) => model.slug === "google-antigravity:claude-sonnet-4-6")).toHaveLength(1);
+    expect(models.filter((model) => model.slug === "antigravity-cli:claude-sonnet-4-6")).toHaveLength(1);
   });
 });
