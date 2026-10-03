@@ -53,7 +53,7 @@ const PRESENTATION = {
 } as const;
 
 function withTextGenerationFlag(snapshot: ServerProviderDraft): ServerProviderDraft {
-  return { ...snapshot, supportsTextGeneration: false };
+  return { ...snapshot, supportsTextGeneration: true };
 }
 
 function normalizeModelName(modelId: string, advertisedName: string): string {
